@@ -9,7 +9,13 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QTableWidget,
     QHeaderView,
-    QMessageBox
+    QMessageBox,
+    QAbstractItemView,
+    QDialog,
+    QFormLayout,
+    QComboBox,
+    QSpinBox,
+    QDoubleSpinBox
 )
 from PySide6.QtCore import Qt
 from database.conn import koneksi_database
@@ -21,12 +27,17 @@ class Produk(QWidget):
         layout.setContentsMargins(20, 10, 20, 10)
         layout.setSpacing(10)
 
-        self.label=QLabel("Halaman Data Produk")
-        self.cari=QLineEdit()
+        baris_atas = QHBoxLayout()
+
+        self.cari = QLineEdit()
         self.cari.setPlaceholderText("Cari Produk...")
+
+        self.tambah = QPushButton("+ Tambah")
+        self.tambah.clicked.connect(self.tambah_produk)
         layout.setAlignment(Qt.AlignTop)
-        layout.addWidget(self.label)
+        layout.addLayout(baris_atas)
         layout.addWidget(self.cari)
+        layout.addWidget(self.tambah)
         self.table=QTableWidget()
         self.table.setColumnCount(6)
         self.table.setRowCount(0)
@@ -44,12 +55,15 @@ class Produk(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
         layout.addWidget(self.table)
         self.cari.textChanged.connect(self.cari_barang)
         self.cari_barang("")
         self.setLayout(layout)
 
-        self.label.setStyleSheet("""
+        self.setStyleSheet("""
             QLabel{
                 color:black;
                 font-size: 20px;
@@ -103,3 +117,280 @@ class Produk(QWidget):
             db.close()
         except Exception as e:
             QMessageBox.warning(self, "Error Database", f"Gagal mengambil data produk:\n{e}")
+
+    def tambah_produk(self):
+
+        dialog = QDialog(self)
+
+        dialog.setWindowTitle("Tambah Produk")
+
+        dialog.setMinimumWidth(400)
+
+        layout = QFormLayout()
+
+        # =========================
+        # KODE BARANG
+        # =========================
+
+        kode = QLineEdit()
+        kode.setPlaceholderText("Contoh: BRG001")
+
+        layout.addRow(
+            "Kode Barang:",
+            kode
+        )
+
+        # =========================
+        # NAMA BARANG
+        # =========================
+
+        nama = QLineEdit()
+        nama.setPlaceholderText("Nama barang")
+
+        layout.addRow(
+            "Nama Barang:",
+            nama
+        )
+
+        # =========================
+        # KATEGORI
+        # =========================
+
+        kategori = QComboBox()
+
+        try:
+
+            db = koneksi_database()
+            cursor = db.cursor(dictionary=True)
+
+            query = """
+                SELECT id, nama_kategori
+                FROM categories
+                ORDER BY nama_kategori ASC
+            """
+
+            cursor.execute(query)
+
+            daftar_kategori = cursor.fetchall()
+
+            cursor.close()
+            db.close()
+
+            for item in daftar_kategori:
+
+                kategori.addItem(
+                    item["nama_kategori"],
+                    item["id"]
+                )
+
+        except Exception as e:
+
+            QMessageBox.warning(
+                self,
+                "Error Database",
+                f"Gagal mengambil kategori:\n{e}"
+            )
+
+        layout.addRow(
+            "Kategori:",
+            kategori
+        )
+
+        # =========================
+        # HARGA
+        # =========================
+
+        harga = QDoubleSpinBox()
+
+        harga.setRange(
+            0,
+            999999999
+        )
+
+        harga.setDecimals(0)
+
+        harga.setPrefix("Rp ")
+
+        layout.addRow(
+            "Harga:",
+            harga
+        )
+
+        # =========================
+        # STOCK
+        # =========================
+
+        stok = QSpinBox()
+
+        stok.setRange(
+            0,
+            999999
+        )
+
+        layout.addRow(
+            "Stock:",
+            stok
+        )
+
+        # =========================
+        # BUTTON
+        # =========================
+
+        tombol_simpan = QPushButton("Simpan")
+        tombol_batal = QPushButton("Batal")
+
+        baris_tombol = QHBoxLayout()
+
+        baris_tombol.addWidget(
+            tombol_simpan
+        )
+
+        baris_tombol.addWidget(
+            tombol_batal
+        )
+
+        layout.addRow(
+            baris_tombol
+        )
+
+        dialog.setLayout(layout)
+
+        # =========================
+        # BATAL
+        # =========================
+
+        tombol_batal.clicked.connect(
+            dialog.reject
+        )
+
+        # =========================
+        # SIMPAN
+        # =========================
+
+        tombol_simpan.clicked.connect(
+            lambda: self.simpan_produk(
+                dialog,
+                kode,
+                nama,
+                kategori,
+                harga,
+                stok
+            )
+        )
+
+        dialog.exec()
+
+    # ==========================================
+    # SIMPAN PRODUK
+    # ==========================================
+
+    def simpan_produk(
+        self,
+        dialog,
+        kode,
+        nama,
+        kategori,
+        harga,
+        stok
+    ):
+
+        kode_barang = kode.text().strip()
+        nama_barang = nama.text().strip()
+
+        # =========================
+        # VALIDASI
+        # =========================
+
+        if not kode_barang:
+
+            QMessageBox.warning(
+                dialog,
+                "Peringatan",
+                "Kode barang tidak boleh kosong."
+            )
+
+            return
+
+        if not nama_barang:
+
+            QMessageBox.warning(
+                dialog,
+                "Peringatan",
+                "Nama barang tidak boleh kosong."
+            )
+
+            return
+
+        if kategori.currentIndex() == -1:
+
+            QMessageBox.warning(
+                dialog,
+                "Peringatan",
+                "Silakan pilih kategori."
+            )
+
+            return
+
+        kategori_id = kategori.currentData()
+
+        harga_barang = harga.value()
+
+        stok_barang = stok.value()
+
+        # =========================
+        # INSERT DATABASE
+        # =========================
+
+        try:
+
+            db = koneksi_database()
+            cursor = db.cursor()
+
+            query = """
+                INSERT INTO products
+                (
+                    kode_barang,
+                    nama_barang,
+                    kategori_id,
+                    harga,
+                    stok
+                )
+                VALUES (%s, %s, %s, %s, %s)
+            """
+
+            cursor.execute(
+                query,
+                (
+                    kode_barang,
+                    nama_barang,
+                    kategori_id,
+                    harga_barang,
+                    stok_barang
+                )
+            )
+
+            db.commit()
+
+            cursor.close()
+            db.close()
+
+            QMessageBox.information(
+                dialog,
+                "Berhasil",
+                "Produk berhasil ditambahkan."
+            )
+
+            dialog.accept()
+
+            # Refresh tabel
+            self.cari_barang(
+                self.cari.text()
+            )
+
+        except Exception as e:
+
+            QMessageBox.critical(
+                dialog,
+                "Error Database",
+                f"Gagal menambahkan produk:\n{e}"
+            )
