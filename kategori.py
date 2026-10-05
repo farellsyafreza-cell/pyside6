@@ -21,7 +21,7 @@ class Kategori (QWidget):
         super().__init__()
         layout=QVBoxLayout()
         layout.setContentsMargins(20, 10, 20, 10)
-        layout.setSpacing(5)
+        layout.setSpacing(10)
         self.label=QLabel("Kategori Barang")
         baris_atas = QHBoxLayout()
 
@@ -31,7 +31,13 @@ class Kategori (QWidget):
         self.tambah = QPushButton("+ Tambah")
         self.tambah.clicked.connect(self.tambah_kategori)
 
-        baris_atas.addWidget(self.search)
+        self.edit = QPushButton("Edit")
+        self.edit.clicked.connect(self.edit_kategori)
+        self.hapus = QPushButton("Hapus")
+        self.hapus.clicked.connect(self.hapus_kategori)
+
+        baris_atas.addWidget(self.label)
+        baris_atas.addStretch()
         baris_atas.addWidget(self.tambah)
 
         layout.addLayout(baris_atas)
@@ -97,61 +103,47 @@ class Kategori (QWidget):
         db.close()
 
     def tambah_kategori(self):
-
         nama, ok = QInputDialog.getText(
             self,
             "Tambah Kategori",
             "Nama Kategori:"
         )
-
         if not ok:
             return
-
+        
         nama = nama.strip()
-
+        
         if not nama:
-
+            
             QMessageBox.warning(
                 self,
                 "Peringatan",
                 "Nama kategori tidak boleh kosong."
             )
-
             return
-
+        
         try:
-
+           
             db = koneksi_database()
             cursor = db.cursor()
-
-            query = """
-                INSERT INTO categories (nama_kategori)
-                VALUES (%s)
-            """
-
-            cursor.execute(
-                query,
-                (nama,)
-            )
-
+            query = """INSERT INTO categories (nama_kategori) VALUES (%s)"""
+            
+            cursor.execute(query, (nama,))
+           
             db.commit()
-
             cursor.close()
             db.close()
-
             QMessageBox.information(
                 self,
                 "Berhasil",
                 "Kategori berhasil ditambahkan."
             )
-
-            # Refresh tabel
+            
             self.cari_kategori(
                 self.search.text()
             )
-
+        
         except Exception as e:
-
             QMessageBox.critical(
                 self,
                 "Error Database",

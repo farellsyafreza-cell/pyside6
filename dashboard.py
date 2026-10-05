@@ -16,12 +16,14 @@ class Dashboard(QMainWindow):
     def __init__(self, nama, role):
         from kategori import Kategori
         from produk import Produk
+        from transaksi import Transaksi
+        from laporan  import Laporan
         super().__init__()
         self.nama= nama
         self.role= role
 
         self.setWindowTitle("Dashboard")
-        self.resize(800, 600)
+        self.resize(900, 650)
 
         layout=QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -52,17 +54,15 @@ class Dashboard(QMainWindow):
         sidebar_layout.setContentsMargins(15, 20, 15, 20)
         sidebar_layout.addSpacing(10)
         dashboard_button=QPushButton("Dashboard")
-        transaksi_button=QPushButton("Kategori")
+        kategori_button=QPushButton("Kategori")
         data_produk_button=QPushButton("Data Produk")
-        kategori_button=QPushButton("Transaksi")
+        transaksi_button=QPushButton("Transaksi")
         laporan_button=QPushButton("Laporan")
-        kelola_button=QPushButton("Kelola")
         sidebar_layout.addWidget(dashboard_button)
-        sidebar_layout.addWidget(transaksi_button)
-        sidebar_layout.addWidget(data_produk_button)
         sidebar_layout.addWidget(kategori_button)
+        sidebar_layout.addWidget(data_produk_button)
+        sidebar_layout.addWidget(transaksi_button)
         sidebar_layout.addWidget(laporan_button)
-        sidebar_layout.addWidget(kelola_button)
         sidebar_layout.addStretch()
         sidebar_layout.addSpacing(10)
         sidebar.setLayout(sidebar_layout)
@@ -73,8 +73,8 @@ class Dashboard(QMainWindow):
         self.page_dashboard=self.halaman_dashboard()
         self.page_kategori=Kategori()
         self.page_produk=Produk()
-        self.page_transaksi=self.halaman_kategori()
-        self.page_laporan=self.halaman_laporan()
+        self.page_transaksi=Transaksi()
+        self.page_laporan=Laporan()
 
         self.pages.addWidget(self.page_dashboard)
         self.pages.addWidget(self.page_kategori)
@@ -98,13 +98,13 @@ class Dashboard(QMainWindow):
         dashboard_button.clicked.connect(
             lambda: self.pages.setCurrentWidget(self.page_dashboard)
         )
-        transaksi_button.clicked.connect(
+        kategori_button.clicked.connect(
             lambda: self.pages.setCurrentWidget(self.page_kategori)
         )
         data_produk_button.clicked.connect(
             lambda: self.pages.setCurrentWidget(self.page_produk)
         )
-        kategori_button.clicked.connect(
+        transaksi_button.clicked.connect(
             lambda: self.pages.setCurrentWidget(self.page_transaksi)
         )
         laporan_button.clicked.connect(
@@ -161,26 +161,6 @@ class Dashboard(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout()
         label = QLabel("Selamat datang di Dashboard")
-        label.setObjectName("page_title")
-        label.setAlignment(Qt.AlignTop)
-        layout.addWidget(label)
-        page.setLayout(layout)
-        return page
-
-    def halaman_kategori(self):
-        page = QWidget()
-        layout = QVBoxLayout()
-        label = QLabel("Halaman Kategori")
-        label.setObjectName("page_title")
-        label.setAlignment(Qt.AlignTop)
-        layout.addWidget(label)
-        page.setLayout(layout)
-        return page
-
-    def halaman_laporan(self):
-        page = QWidget()
-        layout = QVBoxLayout()
-        label = QLabel("Halaman Laporan")
         label.setObjectName("page_title")
         label.setAlignment(Qt.AlignTop)
         layout.addWidget(label)
