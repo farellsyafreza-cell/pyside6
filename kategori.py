@@ -28,7 +28,7 @@ class Kategori (QWidget):
         self.search = QLineEdit()
         self.search.setPlaceholderText("Cari Barang...")
 
-        self.tambah = QPushButton("+ Tambah")
+        self.tambah = QPushButton("Tambah")
         self.tambah.clicked.connect(self.tambah_kategori)
 
         self.edit = QPushButton("Edit")
@@ -150,4 +150,169 @@ class Kategori (QWidget):
                 self,
                 "Error Database",
                 f"Gagal menambahkan kategori:\n{e}"
+            )
+
+    def edit_kategori(self):
+
+        baris = self.tabel.currentRow()
+
+        if baris < 0:
+            QMessageBox.warning(
+                self,
+                "Peringatan",
+                "Silakan pilih kategori yang ingin diedit."
+            )
+            return
+
+        kategori_id = self.tabel.item(baris, 0).text()
+        nama_lama = self.tabel.item(baris, 1).text()
+
+        nama_baru, ok = QInputDialog.getText(
+            self,
+            "Edit Kategori",
+            "Nama Kategori:",
+            text=nama_lama
+        )
+
+        if not ok:
+            return
+
+        nama_baru = nama_baru.strip()
+
+        if not nama_baru:
+            QMessageBox.warning(
+                self,
+                "Peringatan",
+                "Nama kategori tidak boleh kosong."
+            )
+            return
+
+        try:
+
+            db = koneksi_database()
+            cursor = db.cursor()
+
+            query = """
+                UPDATE categories
+                SET nama_kategori = %s
+                WHERE id = %s
+            """
+
+            cursor.execute(
+                query,
+                (nama_baru, kategori_id)
+            )
+
+            db.commit()
+
+            cursor.close()
+            db.close()
+
+            QMessageBox.information(
+                self,
+                "Berhasil",
+                "Kategori berhasil diperbarui."
+            )
+
+            self.cari_kategori(
+                self.search.text()
+            )
+
+        except Exception as e:
+
+            QMessageBox.critical(
+                self,
+                "Error Database",
+                f"Gagal mengedit kategori:\n{e}"
+            )
+
+    def hapus_kategori(self):
+
+        baris = self.tabel.currentRow()
+
+        if baris < 0:
+            QMessageBox.warning(
+                self,
+                "Peringatan",
+                "Silakan pilih kategori yang ingin dihapus."
+            )
+            return
+
+        kategori_id = self.tabel.item(baris, 0).text()
+        nama_kategori = self.tabel.item(baris, 1).text()
+
+        konfirmasi = QMessageBox.question(
+            self,
+            "Konfirmasi Hapus",
+            f"Apakah Anda yakin ingin menghapus kategori "
+            f"'{nama_kategori}'?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if konfirmasi != QMessageBox.Yes:
+            return
+
+        try:
+
+            db = koneksi_database()
+            cursor = db.cursor()
+
+            # Cek apakah kategori masih digunakan produk
+            cursor.execute(
+                """
+                SELECT COUNT(*)
+                FROM products
+                WHERE kategori_id = %s
+                """,
+                (kategori_id,)
+            )
+
+            jumlah_produk = cursor.fetchone()[0]
+
+            if jumlah_produk > 0:
+
+                cursor.close()
+                db.close()
+
+                QMessageBox.warning(
+                    self,
+                    "Tidak Bisa Dihapus",
+                    f"Kategori '{nama_kategori}' masih digunakan "
+                    f"oleh {jumlah_produk} produk.\n\n"
+                    "Hapus atau pindahkan produk tersebut terlebih dahulu."
+                )
+
+                return
+
+            # Hapus kategori
+            cursor.execute(
+                """
+                DELETE FROM categories
+                WHERE id = %s
+                """,
+                (kategori_id,)
+            )
+
+            db.commit()
+
+            cursor.close()
+            db.close()
+
+            QMessageBox.information(
+                self,
+                "Berhasil",
+                f"Kategori '{nama_kategori}' berhasil dihapus."
+            )
+
+            self.cari_kategori(
+                self.search.text()
+            )
+
+        except Exception as e:
+
+            QMessageBox.critical(
+                self,
+                "Error Database",
+                f"Gagal menghapus kategori:\n{e}"
             )
