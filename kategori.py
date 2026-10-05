@@ -39,6 +39,8 @@ class Kategori (QWidget):
         baris_atas.addWidget(self.label)
         baris_atas.addStretch()
         baris_atas.addWidget(self.tambah)
+        baris_atas.addWidget(self.edit)
+        baris_atas.addWidget(self.hapus)
 
         layout.addLayout(baris_atas)
         layout.setAlignment(Qt.AlignTop)
